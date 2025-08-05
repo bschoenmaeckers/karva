@@ -1195,4 +1195,33 @@ def test_username(username):
 
         assert_eq!(*result.stats(), expected_stats);
     }
+
+    #[rstest]
+    fn test_pytest_auto_fixture(#[values("function", "module", "package", "session")] scope: &str) {
+        let env = TestEnv::with_file(
+            "<test>/test_file.py",
+            &format!(
+                r#"import pytest
+check = False
+
+@pytest.fixture(scope="{scope}", autouse=True)
+def auto_fixture():
+    global check
+    check = True
+
+def test_fixture_with_name_parameter():
+    global check
+    assert check is True
+"#
+            ),
+        );
+
+        let result = env.test();
+
+        let mut expected_stats = DiagnosticStats::default();
+
+        expected_stats.add_passed();
+
+        assert_eq!(*result.stats(), expected_stats, "{result:?}");
+    }
 }
